@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import DashboardHeader from "../../components/DashboardHeader";
 import StatusBadge from "../../components/StatusBadge";
 import BookingActions from "../components/BookingActions";
+import PetProfileModal from "../components/PetProfileModal";
 import { BOOKINGS, STAFF } from "../../lib/dashboard-data";
 
 export default async function BookingDetailPage({
@@ -113,31 +114,17 @@ export default async function BookingDetailPage({
             </div>
 
             {/* Pet Information */}
-            <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 editorial-shadow px-6 py-5">
-              <p className="text-xs font-label font-bold uppercase tracking-widest text-on-surface-variant mb-4">
-                Pet Information
-              </p>
-              <div className="flex items-center gap-4">
-                <div
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 font-headline font-bold text-xl ${
-                    booking.petSpecies === "dog"
-                      ? "bg-tertiary-container text-on-tertiary-container"
-                      : "bg-secondary-container text-on-secondary-container"
-                  }`}
-                >
-                  {getInitials(booking.petName)}
-                </div>
-                <div>
-                  <p className="font-headline font-bold text-lg text-on-surface">
-                    {booking.petName}
-                  </p>
-                  <p className="text-sm text-on-surface-variant">
-                    {booking.petBreed} ·{" "}
-                    {booking.petSpecies === "dog" ? "Dog" : "Cat"}
-                  </p>
-                </div>
-              </div>
-            </div>
+            <PetProfileModal
+              petName={booking.petName}
+              petSpecies={booking.petSpecies}
+              petBreed={booking.petBreed}
+              petGender={booking.petGender}
+              petAge={booking.petAge}
+              petWeight={booking.petWeight}
+              petCoatType={booking.petCoatType}
+              petSharesRecords={booking.petSharesRecords}
+              sharedCareRecords={booking.sharedCareRecords}
+            />
 
             {/* Owner Contact */}
             <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 editorial-shadow px-6 py-5">
