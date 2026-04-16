@@ -1,26 +1,99 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* Colors */
+  --color-on-surface-variant: #5d605c;
+  --color-tertiary-fixed-dim: #eea840;
+  --color-on-secondary-container: #694b41;
+  --color-surface-container-low: #f4f4f0;
+  --color-surface-container-high: #e7e9e4;
+  --color-surface-tint: #914d00;
+  --color-on-secondary: #fff7f5;
+  --color-surface-dim: #d9dbd6;
+  --color-on-tertiary-container: #583700;
+  --color-error-container: #fd795a;
+  --color-surface-variant: #e1e3de;
+  --color-secondary-fixed-dim: #f5cbbf;
+  --color-on-secondary-fixed: #553930;
+  --color-secondary-container: #ffdbd0;
+  --color-on-error-container: #6e1400;
+  --color-tertiary-container: #feb64c;
+  --color-primary-dim: #804300;
+  --color-outline: #797b78;
+  --color-surface-container-lowest: #ffffff;
+  --color-secondary-dim: #6a4c43;
+  --color-primary-container: #fe932c;
+  --color-surface: #faf9f6;
+  --color-surface-container: #eeeeea;
+  --color-on-primary-fixed: #240f00;
+  --color-surface-container-highest: #e1e3de;
+  --color-tertiary-fixed: #feb64c;
+  --color-inverse-surface: #0d0f0d;
+  --color-background: #faf9f6;
+  --color-on-tertiary-fixed-variant: #644000;
+  --color-on-primary: #fff7f4;
+  --color-on-tertiary: #fff7f3;
+  --color-outline-variant: #b0b3ae;
+  --color-primary: #914d00;
+  --color-on-tertiary-fixed: #3d2500;
+  --color-primary-fixed-dim: #ed871e;
+  --color-on-primary-container: #4a2500;
+  --color-on-error: #fff7f6;
+  --color-on-background: #303330;
+  --color-on-surface: #303330;
+  --color-secondary: #77584e;
+  --color-surface-bright: #faf9f6;
+  --color-on-primary-fixed-variant: #572c00;
+  --color-tertiary: #845500;
+  --color-on-secondary-fixed-variant: #74544a;
+  --color-inverse-primary: #fe932c;
+  --color-inverse-on-surface: #9d9d9a;
+  --color-error-dim: #791903;
+  --color-tertiary-dim: #744a00;
+  --color-error: #a73b21;
+  --color-primary-fixed: #fe932c;
+  --color-secondary-fixed: #ffdbd0;
+
+  /* Border radius */
+  --radius: 1rem;
+  --radius-lg: 2rem;
+  --radius-xl: 3rem;
+  --radius-full: 9999px;
+
+  /* Font families */
+  --font-headline: "Plus Jakarta Sans", sans-serif;
+  --font-body: "Be Vietnam Pro", sans-serif;
+  --font-label: "Plus Jakarta Sans", sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Custom utility classes */
+.glass-nav {
+  backdrop-filter: blur(24px);
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.organic-mask-1 {
+  border-radius: 3rem 1.5rem 4rem 2rem;
 }
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.organic-mask-2 {
+  border-radius: 2rem 4rem 1.5rem 3.5rem;
+}
+.editorial-mask {
+  clip-path: polygon(4% 0%, 100% 0%, 96% 100%, 0% 100%);
+}
+.organic-radius {
+  border-radius: 3rem 1.5rem 2.5rem 1rem;
+}
+.editorial-shadow {
+  box-shadow: 0 8px 32px rgba(48, 51, 48, 0.06);
+}
+.glass-header {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+.material-symbols-outlined {
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
+  vertical-align: middle;
 }
