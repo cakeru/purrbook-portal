@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PurrBook Portal
+
+Provider dashboard for salon, vet clinic, and studio owners on the PurrBook platform. Built as a standalone app separate from the consumer-facing booking app (`amberpet-next`).
+
+## Pages
+
+| Route | Description |
+|-------|-------------|
+| `/dashboard` | Overview — KPIs, today's schedule, quick actions |
+| `/dashboard/bookings` | Booking list with status tabs (Pending / Confirmed / Completed / Cancelled) |
+| `/dashboard/bookings/[id]` | Booking detail — pet info, owner contact, confirm/cancel actions |
+| `/dashboard/services` | Service catalog — add/edit services, active toggles |
+| `/dashboard/staff` | Team management — groomers, vets, boarding attendants |
+| `/dashboard/analytics` | Revenue charts, top services, booking volume |
+| `/dashboard/settings` | Business profile, operating hours, notification preferences |
+
+## Stack
+
+- **Next.js 16** (App Router)
+- **React 19** / **TypeScript 5**
+- **Tailwind CSS v4** with a shared design token system (warm amber/brown palette)
+- **Plus Jakarta Sans** (headlines) · **Be Vietnam Pro** (body)
+- Mock/seed data — no backend required to run
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) — the root redirects to `/dashboard`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Design System
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Shares the same design tokens as `amberpet-next`. All color values are defined as CSS custom properties in `app/globals.css` and referenced via Tailwind utility classes (`bg-primary`, `text-on-surface`, etc.). Never use hardcoded hex values.
 
-## Learn More
+## Related Projects
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [`amberpet-next`](../amberpet-next) — consumer-facing booking app (purrbook.ph)
+- `amberpet-portal` — this project, provider dashboard (portal.purrbook.ph)
