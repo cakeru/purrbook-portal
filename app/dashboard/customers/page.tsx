@@ -3,14 +3,15 @@
 import { useState } from "react";
 import DashboardHeader from "../components/DashboardHeader";
 import { CUSTOMERS, type PortalCustomer } from "../lib/portal-customers";
+import CustomerDetailPanel from "./CustomerDetailPanel";
 
 function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).slice(0, 2).join("");
 }
 
-function CustomerCard({ customer }: { customer: PortalCustomer }) {
+function CustomerCard({ customer, onSelect }: { customer: PortalCustomer; onSelect: (c: PortalCustomer) => void }) {
   return (
-    <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 p-6 flex flex-col gap-4 hover:-translate-y-0.5 transition-all duration-200 editorial-shadow">
+    <div onClick={() => onSelect(customer)} className="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 p-6 flex flex-col gap-4 hover:-translate-y-0.5 transition-all duration-200 editorial-shadow cursor-pointer">
 
       {/* Avatar + name + status */}
       <div className="flex items-start justify-between gap-3">
@@ -83,12 +84,12 @@ function CustomerCard({ customer }: { customer: PortalCustomer }) {
             {customer.lastService}
           </p>
         </div>
-        <a
-          href="/dashboard/bookings"
+        <button
+          onClick={(e) => { e.stopPropagation(); onSelect(customer); }}
           className="text-primary font-label font-bold text-xs hover:underline active:scale-95 transition-all"
         >
-          View Bookings →
-        </a>
+          View Profile →
+        </button>
       </div>
     </div>
   );
@@ -96,6 +97,7 @@ function CustomerCard({ customer }: { customer: PortalCustomer }) {
 
 export default function CustomersPage() {
   const [searchQ, setSearchQ] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState<PortalCustomer | null>(null);
 
   const filtered = CUSTOMERS.filter((c) => {
     if (!searchQ.trim()) return true;
@@ -160,12 +162,17 @@ export default function CustomersPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
             {filtered.map((customer) => (
-              <CustomerCard key={customer.id} customer={customer} />
+              <CustomerCard key={customer.id} customer={customer} onSelect={setSelectedCustomer} />
             ))}
           </div>
         )}
 
       </main>
+
+      <CustomerDetailPanel
+        customer={selectedCustomer}
+        onClose={() => setSelectedCustomer(null)}
+      />
     </>
   );
 }

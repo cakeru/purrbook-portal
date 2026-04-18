@@ -1,6 +1,7 @@
 import DashboardHeader from "../components/DashboardHeader";
 import KpiCard from "../components/KpiCard";
 import CssBarChart from "../components/CssBarChart";
+import PayoutRequestCard from "./PayoutRequestCard";
 import { REVENUE_DATA, SERVICE_RANKINGS, KEY_STATS } from "../lib/dashboard-data";
 
 const maxRevenue = Math.max(...REVENUE_DATA.map((d) => d.revenue));
@@ -155,6 +156,9 @@ export default function AnalyticsPage() {
           </div>
 
         </div>
+
+        {/* Payout */}
+        <PayoutRequestCard available={REVENUE_DATA[5].revenue} />
 
         {/* Insight Block */}
         <div className="bg-primary/5 border border-primary/15 rounded-2xl p-6">

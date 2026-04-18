@@ -1,10 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import DashboardHeader from "../components/DashboardHeader";
 import StatusBadge from "../components/StatusBadge";
-import { BOOKINGS, STAFF, type BookingStatus } from "../lib/dashboard-data";
+import { BOOKINGS, STAFF, type Booking, type BookingStatus } from "../lib/dashboard-data";
+import CalendarView from "./CalendarView";
+import BookingDetailPanel from "./BookingDetailPanel";
+import NewBookingDrawer from "./NewBookingDrawer";
 
 const TABS: { label: string; value: BookingStatus | "all" }[] = [
   { label: "All", value: "all" },
@@ -15,11 +17,7 @@ const TABS: { label: string; value: BookingStatus | "all" }[] = [
 ];
 
 function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("");
+  return name.split(" ").map((n) => n[0]).slice(0, 2).join("");
 }
 
 function getStaffName(groomerId: string) {
@@ -27,10 +25,22 @@ function getStaffName(groomerId: string) {
 }
 
 export default function BookingsPage() {
+  const [bookings, setBookings] = useState<Booking[]>(BOOKINGS);
   const [activeTab, setActiveTab] = useState<BookingStatus | "all">("all");
   const [searchQ, setSearchQ] = useState("");
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [newBookingOpen, setNewBookingOpen] = useState(false);
 
-  const filtered = BOOKINGS
+  function handleStatusChange(id: string, status: BookingStatus) {
+    setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)));
+  }
+
+  function handleAddBooking(booking: Booking) {
+    setBookings((prev) => [booking, ...prev]);
+  }
+
+  const filtered = bookings
     .filter((b) => activeTab === "all" || b.status === activeTab)
     .filter((b) => {
       if (!searchQ.trim()) return true;
@@ -44,9 +54,7 @@ export default function BookingsPage() {
     });
 
   function countFor(tab: BookingStatus | "all") {
-    return tab === "all"
-      ? BOOKINGS.length
-      : BOOKINGS.filter((b) => b.status === tab).length;
+    return tab === "all" ? bookings.length : bookings.filter((b) => b.status === tab).length;
   }
 
   return (
@@ -55,136 +63,148 @@ export default function BookingsPage() {
 
       <main className="px-8 py-8">
 
-        {/* Tab Bar */}
-        <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/10 p-1 inline-flex gap-1 mb-6 flex-wrap">
-          {TABS.map((tab) => {
-            const active = activeTab === tab.value;
-            return (
+        {/* Controls row */}
+        <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+          {/* Tab Bar */}
+          <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/10 p-1 inline-flex gap-1 flex-wrap">
+            {TABS.map((tab) => {
+              const active = activeTab === tab.value;
+              return (
+                <button
+                  key={tab.value}
+                  onClick={() => setActiveTab(tab.value)}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-label font-bold text-sm transition-all active:scale-95 ${
+                    active
+                      ? "bg-primary text-on-primary shadow-md shadow-primary/20"
+                      : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
+                  }`}
+                >
+                  {tab.label}
+                  <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-label font-bold ${active ? "bg-on-primary/20 text-on-primary" : "bg-surface-container text-on-surface-variant"}`}>
+                    {countFor(tab.value)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-3 ml-auto">
+          {/* New Booking button */}
+          <button
+            onClick={() => setNewBookingOpen(true)}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary to-primary-dim text-on-primary font-label font-bold text-sm shadow-lg shadow-primary/20 active:scale-95 transition-all"
+          >
+            <span className="material-symbols-outlined text-base">add</span>
+            New Booking
+          </button>
+
+          {/* View toggle */}
+          <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/10 p-1 inline-flex gap-1">
+            {(["list", "calendar"] as const).map((mode) => (
               <button
-                key={tab.value}
-                onClick={() => setActiveTab(tab.value)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-label font-bold text-sm transition-all active:scale-95 ${
-                  active
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-label font-bold text-sm transition-all active:scale-95 ${
+                  viewMode === mode
                     ? "bg-primary text-on-primary shadow-md shadow-primary/20"
                     : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
                 }`}
               >
-                {tab.label}
-                <span
-                  className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-label font-bold ${
-                    active
-                      ? "bg-on-primary/20 text-on-primary"
-                      : "bg-surface-container text-on-surface-variant"
-                  }`}
-                >
-                  {countFor(tab.value)}
+                <span className="material-symbols-outlined text-base">
+                  {mode === "list" ? "view_list" : "calendar_month"}
                 </span>
+                <span className="capitalize">{mode}</span>
               </button>
-            );
-          })}
-        </div>
-
-        {/* Booking List */}
-        {filtered.length === 0 ? (
-          <p className="text-on-surface-variant text-sm py-12 text-center">
-            {searchQ.trim() ? `No bookings match "${searchQ}".` : "No bookings in this category."}
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {filtered.map((booking) => (
-              <div
-                key={booking.id}
-                className="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 px-5 py-4 flex items-center gap-4 editorial-shadow hover:-translate-y-0.5 transition-all duration-200"
-              >
-                {/* Pet Avatar */}
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-headline font-bold text-sm ${
-                    booking.petSpecies === "dog"
-                      ? "bg-tertiary-container text-on-tertiary-container"
-                      : "bg-secondary-container text-on-secondary-container"
-                  }`}
-                >
-                  {getInitials(booking.petName)}
-                </div>
-
-                {/* Pet + Breed */}
-                <div className="w-36 flex-shrink-0 min-w-0">
-                  <p className="font-headline font-bold text-sm text-on-surface truncate">
-                    {booking.petName}
-                  </p>
-                  <p className="text-xs text-on-surface-variant truncate">
-                    {booking.petBreed}
-                  </p>
-                </div>
-
-                {/* Owner */}
-                <div className="w-36 flex-shrink-0 min-w-0 hidden md:block">
-                  <p className="font-label font-bold text-sm text-on-surface truncate">
-                    {booking.ownerName}
-                  </p>
-                  <p className="text-xs text-on-surface-variant truncate">
-                    {booking.ownerPhone}
-                  </p>
-                </div>
-
-                {/* Service */}
-                <div className="flex-1 min-w-0 hidden lg:block">
-                  <p className="font-label font-bold text-sm text-on-surface truncate">
-                    {booking.service}
-                  </p>
-                  <p className="text-xs text-on-surface-variant">
-                    {booking.duration} min · ₱{booking.price.toLocaleString()}
-                  </p>
-                </div>
-
-                {/* Date + Time */}
-                <div className="w-36 flex-shrink-0 hidden sm:block">
-                  <p className="font-label font-bold text-sm text-on-surface">
-                    {booking.date}
-                  </p>
-                  <p className="text-xs text-on-surface-variant">
-                    {booking.time}
-                  </p>
-                </div>
-
-                {/* Groomer */}
-                <div className="w-28 flex-shrink-0 hidden xl:flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-headline font-bold text-primary">
-                      {getInitials(getStaffName(booking.groomerId))}
-                    </span>
-                  </div>
-                  <p className="text-xs font-label font-bold text-on-surface-variant truncate">
-                    {getStaffName(booking.groomerId).split(" ")[0]}
-                  </p>
-                </div>
-
-                {/* Status */}
-                <StatusBadge status={booking.status} />
-
-                {/* Actions */}
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {booking.status === "pending" && (
-                    <Link
-                      href={`/dashboard/bookings/${booking.id}`}
-                      className="px-4 py-2 bg-primary text-on-primary rounded-full font-label font-bold text-xs active:scale-95 transition-all shadow shadow-primary/20"
-                    >
-                      Confirm
-                    </Link>
-                  )}
-                  <Link
-                    href={`/dashboard/bookings/${booking.id}`}
-                    className="px-4 py-2 border border-outline-variant/30 text-on-surface-variant rounded-full font-label font-bold text-xs hover:border-primary hover:text-primary transition-all active:scale-95"
-                  >
-                    View
-                  </Link>
-                </div>
-              </div>
             ))}
           </div>
+          </div>
+        </div>
+
+        {/* Calendar view */}
+        {viewMode === "calendar" && (
+          <CalendarView bookings={bookings} onSelect={setSelectedBooking} />
         )}
 
+        {/* List view */}
+        {viewMode === "list" && (
+          filtered.length === 0 ? (
+            <p className="text-on-surface-variant text-sm py-12 text-center">
+              {searchQ.trim() ? `No bookings match "${searchQ}".` : "No bookings in this category."}
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {filtered.map((booking) => (
+                <div
+                  key={booking.id}
+                  className="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 px-5 py-4 flex items-center gap-4 editorial-shadow hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                  onClick={() => setSelectedBooking(booking)}
+                >
+                  {/* Pet Avatar */}
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-headline font-bold text-sm ${booking.petSpecies === "dog" ? "bg-tertiary-container text-on-tertiary-container" : "bg-secondary-container text-on-secondary-container"}`}>
+                    {getInitials(booking.petName)}
+                  </div>
+
+                  {/* Pet + Breed */}
+                  <div className="w-36 flex-shrink-0 min-w-0">
+                    <p className="font-headline font-bold text-sm text-on-surface truncate">{booking.petName}</p>
+                    <p className="text-xs text-on-surface-variant truncate">{booking.petBreed}</p>
+                  </div>
+
+                  {/* Owner */}
+                  <div className="w-36 flex-shrink-0 min-w-0 hidden md:block">
+                    <p className="font-label font-bold text-sm text-on-surface truncate">{booking.ownerName}</p>
+                    <p className="text-xs text-on-surface-variant truncate">{booking.ownerPhone}</p>
+                  </div>
+
+                  {/* Service */}
+                  <div className="flex-1 min-w-0 hidden lg:block">
+                    <p className="font-label font-bold text-sm text-on-surface truncate">{booking.service}</p>
+                    <p className="text-xs text-on-surface-variant">{booking.duration} min · ₱{booking.price.toLocaleString()}</p>
+                  </div>
+
+                  {/* Date + Time */}
+                  <div className="w-36 flex-shrink-0 hidden sm:block">
+                    <p className="font-label font-bold text-sm text-on-surface">{booking.date}</p>
+                    <p className="text-xs text-on-surface-variant">{booking.time}</p>
+                  </div>
+
+                  {/* Groomer */}
+                  <div className="w-28 flex-shrink-0 hidden xl:flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-headline font-bold text-primary">{getInitials(getStaffName(booking.groomerId))}</span>
+                    </div>
+                    <p className="text-xs font-label font-bold text-on-surface-variant truncate">
+                      {getStaffName(booking.groomerId).split(" ")[0]}
+                    </p>
+                  </div>
+
+                  {/* Status */}
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <StatusBadge status={booking.status} />
+                  </div>
+
+                  {/* View hint */}
+                  <span className="material-symbols-outlined text-on-surface-variant text-base flex-shrink-0">
+                    chevron_right
+                  </span>
+                </div>
+              ))}
+            </div>
+          )
+        )}
       </main>
+
+      <BookingDetailPanel
+        booking={selectedBooking}
+        onClose={() => setSelectedBooking(null)}
+        onStatusChange={handleStatusChange}
+      />
+
+      <NewBookingDrawer
+        open={newBookingOpen}
+        onClose={() => setNewBookingOpen(false)}
+        onAdd={handleAddBooking}
+      />
     </>
   );
 }
