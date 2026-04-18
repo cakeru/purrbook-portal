@@ -5,8 +5,13 @@ import DashboardHeader from "../components/DashboardHeader";
 import {
   PROVIDER_INFO,
   OPERATING_HOURS,
+  PAYOUT_INFO,
+  PH_BANKS,
   type DayHours,
   type ProviderInfo,
+  type PayoutInfo,
+  type PayoutMethod,
+  type PayoutSchedule,
 } from "../lib/dashboard-data";
 
 const NOTIFICATIONS = [
@@ -51,10 +56,17 @@ export default function SettingsPage() {
     Object.fromEntries(NOTIFICATIONS.map((n) => [n.id, n.defaultOn]))
   );
   const [saved, setSaved] = useState(false);
+  const [payout, setPayout] = useState<PayoutInfo>({ ...PAYOUT_INFO });
+  const [payoutSaved, setPayoutSaved] = useState(false);
 
   function handleSave() {
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
+  }
+
+  function handlePayoutSave() {
+    setPayoutSaved(true);
+    setTimeout(() => setPayoutSaved(false), 2500);
   }
 
   function toggleHours(idx: number) {
@@ -305,6 +317,168 @@ export default function SettingsPage() {
                 </button>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* Payout & Payments */}
+        <section className="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 editorial-shadow overflow-hidden">
+          <div className="px-6 py-5 border-b border-outline-variant/10">
+            <h2 className="font-headline font-bold text-base text-on-surface tracking-tight">
+              Payout &amp; Payments
+            </h2>
+            <p className="text-xs text-on-surface-variant mt-0.5">
+              How you receive your earnings from PurrBook
+            </p>
+          </div>
+          <div className="px-6 py-5 space-y-5">
+
+            {/* Payout Method */}
+            <div>
+              <label className="text-xs font-label font-bold uppercase tracking-widest text-on-surface-variant block mb-2">
+                Payout Method
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {(["gcash", "maya", "bank_transfer", "cash"] as PayoutMethod[]).map((method) => {
+                  const labels: Record<PayoutMethod, string> = {
+                    gcash: "GCash",
+                    maya: "Maya",
+                    bank_transfer: "Bank Transfer",
+                    cash: "Cash",
+                  };
+                  return (
+                    <button
+                      key={method}
+                      onClick={() => setPayout((p) => ({ ...p, method }))}
+                      className={`py-2.5 rounded-xl font-label font-bold text-sm transition-all active:scale-95 ${
+                        payout.method === method
+                          ? "bg-primary text-on-primary shadow shadow-primary/20"
+                          : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+                      }`}
+                    >
+                      {labels[method]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Conditional Detail Fields */}
+            {(payout.method === "gcash" || payout.method === "maya") && (
+              <div className="pt-4 border-t border-outline-variant/10">
+                <label className="text-xs font-label font-bold uppercase tracking-widest text-on-surface-variant block mb-2">
+                  Mobile Number
+                </label>
+                <input
+                  type="tel"
+                  value={payout.mobileNumber ?? ""}
+                  onChange={(e) => setPayout((p) => ({ ...p, mobileNumber: e.target.value }))}
+                  placeholder="e.g. 0917 123 4567"
+                  className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 text-sm font-body focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
+                />
+              </div>
+            )}
+
+            {payout.method === "bank_transfer" && (
+              <div className="pt-4 border-t border-outline-variant/10 space-y-4">
+                <div>
+                  <label className="text-xs font-label font-bold uppercase tracking-widest text-on-surface-variant block mb-2">
+                    Bank Name
+                  </label>
+                  <select
+                    value={payout.bankName ?? ""}
+                    onChange={(e) => setPayout((p) => ({ ...p, bankName: e.target.value }))}
+                    className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 text-sm font-body focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
+                  >
+                    <option value="">Select a bank…</option>
+                    {PH_BANKS.map((bank) => (
+                      <option key={bank} value={bank}>{bank}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-label font-bold uppercase tracking-widest text-on-surface-variant block mb-2">
+                      Account Number
+                    </label>
+                    <input
+                      type="text"
+                      value={payout.accountNumber ?? ""}
+                      onChange={(e) => setPayout((p) => ({ ...p, accountNumber: e.target.value }))}
+                      placeholder="e.g. 1234567890"
+                      className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 text-sm font-body focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-label font-bold uppercase tracking-widest text-on-surface-variant block mb-2">
+                      Account Name
+                    </label>
+                    <input
+                      type="text"
+                      value={payout.accountName ?? ""}
+                      onChange={(e) => setPayout((p) => ({ ...p, accountName: e.target.value }))}
+                      placeholder="e.g. Maria Santos"
+                      className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 text-sm font-body focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {payout.method === "cash" && (
+              <div className="pt-4 border-t border-outline-variant/10">
+                <div className="flex items-start gap-3 bg-surface-container rounded-xl px-4 py-3">
+                  <span className="material-symbols-outlined text-on-surface-variant text-base mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    info
+                  </span>
+                  <p className="text-xs text-on-surface-variant leading-relaxed">
+                    Payments are collected manually at the time of appointment. No additional payout details required.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Payout Schedule */}
+            <div className="pt-4 border-t border-outline-variant/10">
+              <label className="text-xs font-label font-bold uppercase tracking-widest text-on-surface-variant block mb-2">
+                Payout Schedule
+              </label>
+              <div className="flex gap-2">
+                {([
+                  { value: "weekly", label: "Weekly", sub: "Every Friday" },
+                  { value: "bimonthly", label: "Bi-monthly", sub: "1st & 15th" },
+                  { value: "monthly", label: "Monthly", sub: "End of month" },
+                ] as { value: PayoutSchedule; label: string; sub: string }[]).map(({ value, label, sub }) => (
+                  <button
+                    key={value}
+                    onClick={() => setPayout((p) => ({ ...p, schedule: value }))}
+                    className={`flex-1 py-2.5 px-3 rounded-xl font-label font-bold text-sm transition-all active:scale-95 flex flex-col items-center gap-0.5 ${
+                      payout.schedule === value
+                        ? "bg-primary text-on-primary shadow shadow-primary/20"
+                        : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+                    }`}
+                  >
+                    {label}
+                    <span className={`text-[10px] font-normal ${payout.schedule === value ? "text-on-primary/70" : "text-on-surface-variant/70"}`}>
+                      {sub}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Save */}
+            <div className="flex justify-end">
+              <button
+                onClick={handlePayoutSave}
+                className={`px-6 py-2.5 rounded-full font-label font-bold text-sm active:scale-95 transition-all ${
+                  payoutSaved
+                    ? "bg-tertiary-container text-on-tertiary-container"
+                    : "bg-gradient-to-r from-primary to-primary-dim text-on-primary shadow-lg shadow-primary/20"
+                }`}
+              >
+                {payoutSaved ? "✓ Saved" : "Save Payout Settings"}
+              </button>
+            </div>
           </div>
         </section>
 

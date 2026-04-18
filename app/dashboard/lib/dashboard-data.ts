@@ -1,5 +1,36 @@
 // ─── Types ──────────────────────────────────────────────────────────────────
 
+export type PayoutMethod = "gcash" | "maya" | "bank_transfer" | "cash";
+export type PayoutSchedule = "weekly" | "bimonthly" | "monthly";
+
+export type PayoutInfo = {
+  method: PayoutMethod;
+  schedule: PayoutSchedule;
+  mobileNumber?: string;
+  bankName?: string;
+  accountNumber?: string;
+  accountName?: string;
+};
+
+export const PAYOUT_INFO: PayoutInfo = {
+  method: "gcash",
+  schedule: "weekly",
+  mobileNumber: "0917 123 4567",
+};
+
+export const PH_BANKS = [
+  "BDO Unibank",
+  "Bank of the Philippine Islands (BPI)",
+  "Metrobank",
+  "UnionBank",
+  "Security Bank",
+  "Landbank",
+  "PNB",
+  "RCBC",
+  "Eastwest Bank",
+  "China Banking Corporation",
+];
+
 export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
 export type ServiceCategory = "grooming" | "vet" | "boarding";
 export type StaffRole =
