@@ -28,11 +28,20 @@ function getStaffName(groomerId: string) {
 
 export default function BookingsPage() {
   const [activeTab, setActiveTab] = useState<BookingStatus | "all">("all");
+  const [searchQ, setSearchQ] = useState("");
 
-  const filtered =
-    activeTab === "all"
-      ? BOOKINGS
-      : BOOKINGS.filter((b) => b.status === activeTab);
+  const filtered = BOOKINGS
+    .filter((b) => activeTab === "all" || b.status === activeTab)
+    .filter((b) => {
+      if (!searchQ.trim()) return true;
+      const q = searchQ.toLowerCase();
+      return (
+        b.petName.toLowerCase().includes(q) ||
+        b.ownerName.toLowerCase().includes(q) ||
+        b.service.toLowerCase().includes(q) ||
+        b.petBreed.toLowerCase().includes(q)
+      );
+    });
 
   function countFor(tab: BookingStatus | "all") {
     return tab === "all"
@@ -42,7 +51,7 @@ export default function BookingsPage() {
 
   return (
     <>
-      <DashboardHeader title="Bookings" breadcrumb="Provider Portal" />
+      <DashboardHeader title="Bookings" breadcrumb="Provider Portal" onSearch={setSearchQ} />
 
       <main className="px-8 py-8">
 
@@ -78,7 +87,7 @@ export default function BookingsPage() {
         {/* Booking List */}
         {filtered.length === 0 ? (
           <p className="text-on-surface-variant text-sm py-12 text-center">
-            No bookings in this category.
+            {searchQ.trim() ? `No bookings match "${searchQ}".` : "No bookings in this category."}
           </p>
         ) : (
           <div className="space-y-3">

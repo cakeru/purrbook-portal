@@ -18,6 +18,7 @@ const ICON_OPTIONS = [
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>(SERVICES);
+  const [searchQ, setSearchQ] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [newService, setNewService] = useState({
     name: "",
@@ -53,7 +54,7 @@ export default function ServicesPage() {
 
   return (
     <>
-      <DashboardHeader title="Services" breadcrumb="Provider Portal" />
+      <DashboardHeader title="Services" breadcrumb="Provider Portal" onSearch={setSearchQ} />
 
       <main className="px-8 py-8">
 
@@ -80,7 +81,8 @@ export default function ServicesPage() {
         {(["grooming", "vet", "boarding"] as ServiceCategory[]).map(
           (category) => {
             const categoryServices = services.filter(
-              (s) => s.category === category
+              (s) => s.category === category &&
+                (!searchQ.trim() || s.name.toLowerCase().includes(searchQ.toLowerCase()) || s.description.toLowerCase().includes(searchQ.toLowerCase()))
             );
             if (categoryServices.length === 0) return null;
             return (

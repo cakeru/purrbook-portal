@@ -3,10 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PROVIDER_INFO } from "../lib/dashboard-data";
+import { SEED_PORTAL_THREADS } from "../lib/portal-messages";
+
+const totalUnread = SEED_PORTAL_THREADS.reduce((sum, t) => sum + t.unreadCount, 0);
 
 const NAV_ITEMS = [
   { href: "/dashboard", icon: "dashboard", label: "Overview" },
   { href: "/dashboard/bookings", icon: "calendar_month", label: "Bookings" },
+  { href: "/dashboard/messages", icon: "chat", label: "Messages", badge: totalUnread },
   { href: "/dashboard/services", icon: "spa", label: "Services" },
   { href: "/dashboard/staff", icon: "group", label: "Staff" },
   { href: "/dashboard/analytics", icon: "bar_chart", label: "Analytics" },
@@ -74,7 +78,14 @@ export default function Sidebar() {
               >
                 {item.icon}
               </span>
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {"badge" in item && (item.badge ?? 0) > 0 && (
+                <span className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center leading-none ${
+                  active ? "bg-on-primary/20 text-on-primary" : "bg-primary text-on-primary"
+                }`}>
+                  {item.badge}
+                </span>
+              )}
             </Link>
           );
         })}

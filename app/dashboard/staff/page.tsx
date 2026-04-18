@@ -1,23 +1,31 @@
+"use client";
+
+import { useState } from "react";
 import DashboardHeader from "../components/DashboardHeader";
 import StatusBadge from "../components/StatusBadge";
-import { STAFF } from "../lib/dashboard-data";
+import AddStaffModal from "../components/AddStaffModal";
+import { STAFF, StaffMember } from "../lib/dashboard-data";
 
 function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("");
+  return name.split(" ").map((n) => n[0]).slice(0, 2).join("");
 }
 
 export default function StaffPage() {
-  const available = STAFF.filter((s) => s.status === "available").length;
-  const onBreak = STAFF.filter((s) => s.status === "on_break").length;
-  const offToday = STAFF.filter((s) => s.status === "off_today").length;
+  const [staffList, setStaffList] = useState<StaffMember[]>(STAFF);
+  const [searchQ, setSearchQ] = useState("");
+  const [showModal, setShowModal] = useState(false);
+
+  function handleAdd(newMember: StaffMember) {
+    setStaffList((prev) => [...prev, newMember]);
+  }
+
+  const available = staffList.filter((s) => s.status === "available").length;
+  const onBreak = staffList.filter((s) => s.status === "on_break").length;
+  const offToday = staffList.filter((s) => s.status === "off_today").length;
 
   return (
     <>
-      <DashboardHeader title="Staff" breadcrumb="Provider Portal" />
+      <DashboardHeader title="Staff" breadcrumb="Provider Portal" onSearch={setSearchQ} />
 
       <main className="px-8 py-8">
 
@@ -31,7 +39,10 @@ export default function StaffPage() {
               Manage groomers, vets, and attendants
             </p>
           </div>
-          <button className="bg-gradient-to-r from-primary to-primary-dim text-on-primary px-5 py-2.5 rounded-full font-label font-bold text-sm active:scale-95 transition-all shadow-lg shadow-primary/20 flex items-center gap-2">
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-gradient-to-r from-primary to-primary-dim text-on-primary px-5 py-2.5 rounded-full font-label font-bold text-sm active:scale-95 transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
+          >
             <span className="material-symbols-outlined text-base">add</span>
             Add Team Member
           </button>
@@ -44,7 +55,7 @@ export default function StaffPage() {
               group
             </span>
             <span className="font-label font-bold text-sm text-on-surface">
-              {STAFF.length} total
+              {staffList.length} total
             </span>
           </div>
           <div className="flex items-center gap-2 bg-tertiary-container rounded-full px-4 py-2">
@@ -69,7 +80,11 @@ export default function StaffPage() {
 
         {/* Staff Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {STAFF.map((member) => (
+          {staffList.filter((m) =>
+            !searchQ.trim() ||
+            m.name.toLowerCase().includes(searchQ.toLowerCase()) ||
+            m.role.toLowerCase().includes(searchQ.toLowerCase())
+          ).map((member) => (
             <div
               key={member.id}
               className="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 p-6 flex flex-col gap-5 hover:-translate-y-0.5 transition-all duration-200 editorial-shadow relative"
@@ -90,12 +105,8 @@ export default function StaffPage() {
                   <p className="font-headline font-bold text-lg text-on-surface leading-tight">
                     {member.name}
                   </p>
-                  <p className="text-sm text-on-surface-variant mt-0.5">
-                    {member.role}
-                  </p>
-                  <p className="text-xs text-on-surface-variant mt-0.5">
-                    Since {member.joinedDate}
-                  </p>
+                  <p className="text-sm text-on-surface-variant mt-0.5">{member.role}</p>
+                  <p className="text-xs text-on-surface-variant mt-0.5">Since {member.joinedDate}</p>
                 </div>
               </div>
 
@@ -114,9 +125,7 @@ export default function StaffPage() {
               {/* Divider + Stats + Action */}
               <div className="border-t border-outline-variant/10 pt-4 flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-on-surface-variant text-base">
-                    calendar_today
-                  </span>
+                  <span className="material-symbols-outlined text-on-surface-variant text-base">calendar_today</span>
                   <p className="text-sm font-label font-bold text-on-surface">
                     {member.bookingsToday} booking{member.bookingsToday !== 1 ? "s" : ""} today
                   </p>
@@ -130,6 +139,10 @@ export default function StaffPage() {
         </div>
 
       </main>
+
+      {showModal && (
+        <AddStaffModal onAdd={handleAdd} onClose={() => setShowModal(false)} />
+      )}
     </>
   );
 }
