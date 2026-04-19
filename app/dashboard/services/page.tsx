@@ -20,6 +20,8 @@ export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>(SERVICES);
   const [searchQ, setSearchQ] = useState("");
   const [addOpen, setAddOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ duration: "", price: "" });
   const [newService, setNewService] = useState({
     name: "",
     category: "grooming" as ServiceCategory,
@@ -33,6 +35,19 @@ export default function ServicesPage() {
     setServices((prev) =>
       prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s))
     );
+  }
+
+  function startEdit(service: Service) {
+    setEditingId(service.id);
+    setEditForm({ duration: String(service.duration), price: String(service.price) });
+  }
+
+  function handleSaveEdit(id: string) {
+    if (!editForm.duration || !editForm.price) return;
+    setServices((prev) =>
+      prev.map((s) => s.id === id ? { ...s, duration: Number(editForm.duration), price: Number(editForm.price) } : s)
+    );
+    setEditingId(null);
   }
 
   function handleAdd() {
@@ -134,16 +149,67 @@ export default function ServicesPage() {
                       </p>
 
                       {/* Meta Row */}
-                      <div className="flex items-center justify-between mt-auto pt-2 border-t border-outline-variant/10">
-                        <div className="flex items-center gap-1.5 text-sm font-label font-bold text-on-surface">
-                          <span className="material-symbols-outlined text-on-surface-variant text-base">
-                            schedule
-                          </span>
-                          {service.duration} min
-                        </div>
-                        <p className="font-headline font-bold text-sm text-primary">
-                          ₱{service.price.toLocaleString()}
-                        </p>
+                      <div className="flex items-center justify-between mt-auto pt-2 border-t border-outline-variant/10 gap-2">
+                        {editingId === service.id ? (
+                          <>
+                            <div className="flex items-center gap-1.5 flex-1">
+                              <span className="material-symbols-outlined text-on-surface-variant text-base">schedule</span>
+                              <input
+                                type="number"
+                                value={editForm.duration}
+                                onChange={(e) => setEditForm((p) => ({ ...p, duration: e.target.value }))}
+                                className="w-16 py-1 px-2 text-sm rounded-lg border border-outline-variant/30 bg-surface-container-low focus:border-primary focus:outline-none font-label font-bold text-on-surface"
+                                min="1"
+                              />
+                              <span className="text-xs text-on-surface-variant font-label">min</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs font-label font-bold text-on-surface-variant">₱</span>
+                              <input
+                                type="number"
+                                value={editForm.price}
+                                onChange={(e) => setEditForm((p) => ({ ...p, price: e.target.value }))}
+                                className="w-20 py-1 px-2 text-sm rounded-lg border border-outline-variant/30 bg-surface-container-low focus:border-primary focus:outline-none font-headline font-bold text-primary"
+                                min="0"
+                              />
+                            </div>
+                            <div className="flex gap-1 flex-shrink-0">
+                              <button
+                                onClick={() => handleSaveEdit(service.id)}
+                                className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary/20 active:scale-95 transition-all"
+                              >
+                                <span className="material-symbols-outlined text-sm">check</span>
+                              </button>
+                              <button
+                                onClick={() => setEditingId(null)}
+                                className="w-7 h-7 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center hover:bg-surface-container-high active:scale-95 transition-all"
+                              >
+                                <span className="material-symbols-outlined text-sm">close</span>
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-1.5 text-sm font-label font-bold text-on-surface">
+                              <span className="material-symbols-outlined text-on-surface-variant text-base">
+                                schedule
+                              </span>
+                              {service.duration} min
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-headline font-bold text-sm text-primary">
+                                ₱{service.price.toLocaleString()}
+                              </p>
+                              <button
+                                onClick={() => startEdit(service)}
+                                className="w-7 h-7 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center hover:bg-surface-container-high active:scale-95 transition-all"
+                                title="Edit price & duration"
+                              >
+                                <span className="material-symbols-outlined text-sm">edit</span>
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}

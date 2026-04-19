@@ -4,7 +4,13 @@ import { useState } from "react";
 import DashboardHeader from "../components/DashboardHeader";
 import StatusBadge from "../components/StatusBadge";
 import AddStaffModal from "../components/AddStaffModal";
-import { STAFF, StaffMember } from "../lib/dashboard-data";
+import { STAFF, StaffMember, AvailabilityStatus } from "../lib/dashboard-data";
+
+const STATUS_OPTIONS: { value: AvailabilityStatus; label: string; dot: string; chip: string }[] = [
+  { value: "available", label: "Available", dot: "bg-tertiary", chip: "bg-tertiary-container text-on-tertiary-container" },
+  { value: "on_break", label: "On Break", dot: "bg-secondary", chip: "bg-secondary-container text-on-secondary-container" },
+  { value: "off_today", label: "Off Today", dot: "bg-outline-variant", chip: "bg-surface-container-highest text-on-surface-variant" },
+];
 
 function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).slice(0, 2).join("");
@@ -17,6 +23,10 @@ export default function StaffPage() {
 
   function handleAdd(newMember: StaffMember) {
     setStaffList((prev) => [...prev, newMember]);
+  }
+
+  function handleStatusChange(id: string, status: AvailabilityStatus) {
+    setStaffList((prev) => prev.map((m) => m.id === id ? { ...m, status } : m));
   }
 
   const available = staffList.filter((s) => s.status === "available").length;
@@ -89,7 +99,7 @@ export default function StaffPage() {
               key={member.id}
               className="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 p-6 flex flex-col gap-5 hover:-translate-y-0.5 transition-all duration-200 editorial-shadow relative"
             >
-              {/* Availability Badge — top right */}
+              {/* Availability Badge — top right (display only) */}
               <div className="absolute top-5 right-5">
                 <StatusBadge status={member.status} />
               </div>
@@ -122,17 +132,30 @@ export default function StaffPage() {
                 ))}
               </div>
 
-              {/* Divider + Stats + Action */}
-              <div className="border-t border-outline-variant/10 pt-4 flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-on-surface-variant text-base">calendar_today</span>
-                  <p className="text-sm font-label font-bold text-on-surface">
-                    {member.bookingsToday} booking{member.bookingsToday !== 1 ? "s" : ""} today
-                  </p>
-                </div>
-                <button className="text-primary font-label font-bold text-xs hover:underline active:scale-95 transition-all">
-                  View Schedule →
-                </button>
+              {/* Status Picker */}
+              <div className="flex gap-1.5">
+                {STATUS_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => handleStatusChange(member.id, opt.value)}
+                    className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-xs font-label font-bold transition-all active:scale-95 ${
+                      member.status === opt.value
+                        ? opt.chip
+                        : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${member.status === opt.value ? opt.dot : "bg-outline-variant"}`} />
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Divider + Stats */}
+              <div className="border-t border-outline-variant/10 pt-4 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-on-surface-variant text-base">calendar_today</span>
+                <p className="text-sm font-label font-bold text-on-surface">
+                  {member.bookingsToday} booking{member.bookingsToday !== 1 ? "s" : ""} today
+                </p>
               </div>
             </div>
           ))}
