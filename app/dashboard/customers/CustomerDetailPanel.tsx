@@ -1,7 +1,5 @@
 "use client";
 
-import { type PortalCustomer } from "../lib/portal-customers";
-import { BOOKINGS } from "../lib/dashboard-data";
 import StatusBadge from "../components/StatusBadge";
 
 function getInitials(name: string) {
@@ -12,14 +10,10 @@ export default function CustomerDetailPanel({
   customer,
   onClose,
 }: {
-  customer: PortalCustomer | null;
+  customer: any | null;
   onClose: () => void;
 }) {
-  const bookings = customer
-    ? BOOKINGS.filter((b) => b.ownerName === customer.name).sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-      )
-    : [];
+  const bookings = customer?.recentBookings ?? [];
 
   return (
     <>

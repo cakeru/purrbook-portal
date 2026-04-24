@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardHeader from "../components/DashboardHeader";
-import { CUSTOMERS, type PortalCustomer } from "../lib/portal-customers";
+import { api } from "../lib/api";
 import CustomerDetailPanel from "./CustomerDetailPanel";
 
 function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).slice(0, 2).join("");
 }
 
-function CustomerCard({ customer, onSelect }: { customer: PortalCustomer; onSelect: (c: PortalCustomer) => void }) {
+function CustomerCard({ customer, onSelect }: { customer: any; onSelect: (c: any) => void }) {
   return (
     <div onClick={() => onSelect(customer)} className="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 p-6 flex flex-col gap-4 hover:-translate-y-0.5 transition-all duration-200 editorial-shadow cursor-pointer">
 
@@ -96,21 +96,34 @@ function CustomerCard({ customer, onSelect }: { customer: PortalCustomer; onSele
 }
 
 export default function CustomersPage() {
+  const [customers, setCustomers] = useState<any[]>([]);
   const [searchQ, setSearchQ] = useState("");
-  const [selectedCustomer, setSelectedCustomer] = useState<PortalCustomer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
 
-  const filtered = CUSTOMERS.filter((c) => {
+  useEffect(() => {
+    api.get<{ customers: any[] }>("/customers").then(({ customers: rows }) => {
+      setCustomers(rows.map((c: any) => ({
+        ...c,
+        pets: c.pets ?? [],
+        phone: c.phone ?? c.contact ?? "",
+        status: c.status ?? "active",
+        totalSpend: c.totalSpendCentavos != null ? c.totalSpendCentavos / 100 : (c.totalSpend ?? 0),
+      })));
+    }).catch(console.error);
+  }, []);
+
+  const filtered = customers.filter((c) => {
     if (!searchQ.trim()) return true;
     const q = searchQ.toLowerCase();
     return (
       c.name.toLowerCase().includes(q) ||
-      c.email.toLowerCase().includes(q) ||
-      c.pets.some((p) => p.name.toLowerCase().includes(q))
+      (c.email ?? "").toLowerCase().includes(q) ||
+      (c.pets ?? []).some((p: any) => (p.name ?? "").toLowerCase().includes(q))
     );
   });
 
-  const active = CUSTOMERS.filter((c) => c.status === "active").length;
-  const inactive = CUSTOMERS.filter((c) => c.status === "inactive").length;
+  const active = customers.filter((c) => c.status === "active").length;
+  const inactive = customers.filter((c) => c.status === "inactive" || c.status === "suspended").length;
 
   return (
     <>
@@ -137,7 +150,7 @@ export default function CustomersPage() {
               group
             </span>
             <span className="font-label font-bold text-sm text-on-surface">
-              {CUSTOMERS.length} total
+              {customers.length} total
             </span>
           </div>
           <div className="flex items-center gap-2 bg-tertiary-container rounded-full px-4 py-2">

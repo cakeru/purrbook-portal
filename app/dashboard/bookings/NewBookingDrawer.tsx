@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { SERVICES, STAFF, type Booking, type BookingStatus } from "../lib/dashboard-data";
+import { useState, useEffect } from "react";
+import { api } from "../lib/api";
 
 const TIME_SLOTS = [
   "08:00 AM","08:30 AM","09:00 AM","09:30 AM","10:00 AM","10:30 AM",
@@ -53,16 +53,23 @@ export default function NewBookingDrawer({
 }: {
   open: boolean;
   onClose: () => void;
-  onAdd: (booking: Booking) => void;
+  onAdd: (booking: any) => void;
 }) {
   const [form, setForm] = useState<Form>(EMPTY);
+  const [services, setServices] = useState<any[]>([]);
+  const [staffList, setStaffList] = useState<any[]>([]);
+
+  useEffect(() => {
+    api.get<{ services: any[] }>("/services").then(({ services: rows }) => setServices(rows.map((s: any) => ({ ...s, price: s.priceCentavos != null ? s.priceCentavos / 100 : s.price, duration: s.durationMins ?? s.duration })))).catch(console.error);
+    api.get<{ staff: any[] }>("/staff").then(({ staff }) => setStaffList(staff)).catch(console.error);
+  }, []);
 
   function set<K extends keyof Form>(key: K, val: Form[K]) {
     setForm((prev) => ({ ...prev, [key]: val }));
   }
 
-  const activeStaff = STAFF.filter((s) => s.status !== "off_today");
-  const selectedService = SERVICES.find((s) => s.id === form.serviceId);
+  const activeStaff = staffList.filter((s) => s.status !== "off_today");
+  const selectedService = services.find((s) => s.id === form.serviceId);
 
   function canSubmit() {
     return !!(
@@ -72,9 +79,9 @@ export default function NewBookingDrawer({
     );
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!selectedService) return;
-    const booking: Booking = {
+    const optimistic: any = {
       id: genId(),
       petName: form.petName,
       petSpecies: form.petSpecies,
@@ -83,20 +90,15 @@ export default function NewBookingDrawer({
       ownerPhone: form.ownerPhone,
       ownerEmail: form.ownerEmail,
       service: selectedService.name,
-      category: selectedService.category,
       groomerId: form.groomerId,
       date: form.date,
       time: form.time,
       duration: selectedService.duration,
       price: selectedService.price,
-      status: "pending" as BookingStatus,
+      status: "pending",
       notes: form.notes,
-      petGender: form.petGender,
-      petAge: form.petAge,
-      petWeight: form.petWeight,
-      petCoatType: form.petCoatType,
     };
-    onAdd(booking);
+    onAdd(optimistic);
     setForm(EMPTY);
     onClose();
   }
@@ -235,7 +237,7 @@ export default function NewBookingDrawer({
           <section>
             <p className="text-xs font-label font-bold uppercase tracking-widest text-on-surface-variant mb-3">Service</p>
             <div className="space-y-2">
-              {SERVICES.filter((s) => s.active).map((svc) => (
+              {services.filter((s) => s.active !== false).map((svc) => (
                 <button
                   key={svc.id}
                   type="button"

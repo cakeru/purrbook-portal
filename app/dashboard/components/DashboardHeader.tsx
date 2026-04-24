@@ -1,12 +1,26 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import {
-  SEED_PORTAL_NOTIFICATIONS,
-  NOTIF_ICONS,
-  formatPortalNotifTime,
-  PortalNotification,
-} from "../lib/portal-notifications";
+import { api } from "../lib/api";
+
+const NOTIF_ICONS: Record<string, string> = {
+  booking: "calendar_month",
+  message: "chat",
+  payment: "payments",
+  staff: "group",
+  review: "star",
+};
+
+function formatNotifTime(iso: string): string {
+  const d = new Date(iso);
+  const diffMs = Date.now() - d.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return "just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMs / 3600000);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  return `${Math.floor(diffMs / 86400000)}d ago`;
+}
 
 type Props = {
   title: string;
@@ -16,11 +30,16 @@ type Props = {
 
 export default function DashboardHeader({ title, breadcrumb, onSearch }: Props) {
   const [search, setSearch] = useState("");
-  const [notifs, setNotifs] = useState<PortalNotification[]>(SEED_PORTAL_NOTIFICATIONS);
+  const [notifs, setNotifs] = useState<any[]>([]);
   const [notifsOpen, setNotifsOpen] = useState(false);
   const bellWrapperRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifs.filter((n) => !n.read).length;
+
+  useEffect(() => {
+    // Portal doesn't have a dedicated notifications endpoint yet; skip silently
+    // api.get<{notifications: any[]}>("/notifications").then(...)
+  }, []);
 
   // Click-outside closes notification panel
   useEffect(() => {
@@ -42,7 +61,7 @@ export default function DashboardHeader({ title, breadcrumb, onSearch }: Props) 
     setNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
   }, []);
 
-  function handleNotifClick(notif: PortalNotification) {
+  function handleNotifClick(notif: any) {
     markRead(notif.id);
     setNotifsOpen(false);
     if (notif.href) window.location.assign(notif.href);
@@ -144,7 +163,7 @@ export default function DashboardHeader({ title, breadcrumb, onSearch }: Props) 
                           {notif.title}
                         </span>
                         <span className="text-[10px] text-stone-400 shrink-0">
-                          {formatPortalNotifTime(notif.timestamp)}
+                          {formatNotifTime(notif.timestamp ?? notif.createdAt ?? "")}
                         </span>
                       </div>
                       <p className="text-xs text-stone-500 leading-relaxed line-clamp-2">

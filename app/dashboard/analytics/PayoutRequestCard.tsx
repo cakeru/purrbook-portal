@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { PAYOUT_INFO } from "../lib/dashboard-data";
+import { useState, useEffect } from "react";
+import { api } from "../lib/api";
 
 const METHOD_LABEL: Record<string, string> = {
   gcash: "GCash",
@@ -19,10 +19,21 @@ const METHOD_ICON: Record<string, string> = {
 
 export default function PayoutRequestCard({ available }: { available: number }) {
   const [state, setState] = useState<"idle" | "confirming" | "requested">("idle");
+  const [payoutSettings, setPayoutSettings] = useState<any>(null);
 
-  const methodLabel = METHOD_LABEL[PAYOUT_INFO.method] ?? PAYOUT_INFO.method;
-  const methodIcon = METHOD_ICON[PAYOUT_INFO.method] ?? "payments";
-  const destination = PAYOUT_INFO.mobileNumber ?? PAYOUT_INFO.accountNumber ?? "—";
+  useEffect(() => {
+    api.get<any>("/settings/payout").then(setPayoutSettings).catch(console.error);
+  }, []);
+
+  const method = payoutSettings?.payoutMethod ?? "gcash";
+  const methodLabel = METHOD_LABEL[method] ?? method;
+  const methodIcon = METHOD_ICON[method] ?? "payments";
+  const destination = payoutSettings?.payoutDestination ?? "—";
+
+  async function handleConfirm() {
+    await api.post("/payouts/request", { amountCentavos: Math.round(available * 100) }).catch(console.error);
+    setState("requested");
+  }
 
   return (
     <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 editorial-shadow p-6">
@@ -46,7 +57,7 @@ export default function PayoutRequestCard({ available }: { available: number }) 
           <p className="text-sm font-label font-bold text-on-surface">{methodLabel}</p>
           <p className="text-xs text-on-surface-variant">{destination}</p>
         </div>
-        <p className="text-xs font-label font-bold text-on-surface-variant capitalize">{PAYOUT_INFO.schedule}</p>
+        <p className="text-xs font-label font-bold text-on-surface-variant capitalize">{payoutSettings?.payoutSchedule ?? "weekly"}</p>
       </div>
 
       {/* Action area */}
@@ -66,7 +77,7 @@ export default function PayoutRequestCard({ available }: { available: number }) 
           </p>
           <div className="flex gap-3">
             <button
-              onClick={() => setState("requested")}
+              onClick={handleConfirm}
               className="flex-1 py-3 rounded-full bg-gradient-to-r from-primary to-primary-dim text-on-primary font-label font-bold text-sm active:scale-95 transition-all shadow-lg shadow-primary/20"
             >
               Confirm

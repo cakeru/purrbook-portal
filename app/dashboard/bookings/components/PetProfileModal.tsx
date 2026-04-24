@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { SharedCareRecord } from "../../lib/dashboard-data";
+type SharedCareRecord = any;
 
 type PetProfileModalProps = {
   petName: string;

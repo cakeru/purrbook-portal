@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardHeader from "../components/DashboardHeader";
-import { PORTAL_REVIEWS, type PortalReview } from "../lib/portal-reviews";
-import { STAFF } from "../lib/dashboard-data";
+import { api } from "../lib/api";
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -25,7 +24,7 @@ function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).slice(0, 2).join("");
 }
 
-function ReviewCard({ review }: { review: PortalReview }) {
+function ReviewCard({ review }: { review: any }) {
   const petColor =
     review.petSpecies === "cat"
       ? "bg-secondary-container text-on-secondary-container"
@@ -86,18 +85,31 @@ type SortKey = "date" | "rating_high" | "rating_low";
 type FilterStaff = "all" | string;
 
 export default function ReviewsPage() {
+  const [reviews, setReviews] = useState<any[]>([]);
   const [searchQ, setSearchQ] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [filterStaff, setFilterStaff] = useState<FilterStaff>("all");
 
-  const staffNames = Array.from(new Set(PORTAL_REVIEWS.map((r) => r.staffName)));
+  useEffect(() => {
+    api.get<{ reviews: any[] }>("/reviews").then(({ reviews: rows }) => {
+      setReviews(rows.map((r: any) => ({
+        ...r,
+        ownerName: r.consumerName ?? r.ownerName,
+        staffName: r.staffName ?? "—",
+        petSpecies: r.petSpecies ?? "dog",
+      })));
+    }).catch(console.error);
+  }, []);
 
-  const avgRating =
-    PORTAL_REVIEWS.reduce((s, r) => s + r.rating, 0) / PORTAL_REVIEWS.length;
+  const staffNames = Array.from(new Set(reviews.map((r) => r.staffName).filter(Boolean)));
 
-  const fiveStars = PORTAL_REVIEWS.filter((r) => r.rating === 5).length;
+  const avgRating = reviews.length > 0
+    ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+    : 0;
 
-  let filtered = PORTAL_REVIEWS.filter((r) => {
+  const fiveStars = reviews.filter((r) => r.rating === 5).length;
+
+  let filtered = reviews.filter((r) => {
     const q = searchQ.toLowerCase();
     if (q && !r.ownerName.toLowerCase().includes(q) && !r.petName.toLowerCase().includes(q) && !r.body.toLowerCase().includes(q)) return false;
     if (filterStaff !== "all" && r.staffName !== filterStaff) return false;
@@ -141,7 +153,7 @@ export default function ReviewsPage() {
           </div>
           <div className="flex items-center gap-2 bg-tertiary-container rounded-full px-4 py-2">
             <span className="font-label font-bold text-sm text-on-tertiary-container">
-              {PORTAL_REVIEWS.length} total reviews
+              {reviews.length} total reviews
             </span>
           </div>
           <div className="flex items-center gap-2 bg-surface-container-highest rounded-full px-4 py-2">

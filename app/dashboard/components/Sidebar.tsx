@@ -2,15 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PROVIDER_INFO } from "../lib/dashboard-data";
-import { SEED_PORTAL_THREADS } from "../lib/portal-messages";
-
-const totalUnread = SEED_PORTAL_THREADS.reduce((sum, t) => sum + t.unreadCount, 0);
+import { getStoredUser } from "../lib/api";
 
 const NAV_ITEMS = [
   { href: "/dashboard", icon: "dashboard", label: "Overview" },
   { href: "/dashboard/bookings", icon: "calendar_month", label: "Bookings" },
-  { href: "/dashboard/messages", icon: "chat", label: "Messages", badge: totalUnread },
+  { href: "/dashboard/messages", icon: "chat", label: "Messages" },
   { href: "/dashboard/customers", icon: "contacts", label: "Customers" },
   { href: "/dashboard/reviews", icon: "star", label: "Reviews" },
   { href: "/dashboard/services", icon: "spa", label: "Services" },
@@ -21,6 +18,7 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const user = typeof window !== "undefined" ? getStoredUser<{ name: string; providerName: string; type: string }>() : null;
 
   function isActive(href: string) {
     if (href === "/dashboard") return pathname === "/dashboard";
@@ -51,10 +49,10 @@ export default function Sidebar() {
       {/* Provider Badge + Business Name */}
       <div className="px-5 pt-4 pb-2 border-b border-outline-variant/10">
         <span className="inline-block px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label text-xs font-bold uppercase tracking-widest">
-          {PROVIDER_INFO.type} Portal
+          {user?.type ?? "Provider"} Portal
         </span>
         <p className="font-headline font-bold text-sm text-on-surface mt-2 leading-tight">
-          {PROVIDER_INFO.name}
+          {user?.providerName ?? user?.name ?? "My Shop"}
         </p>
       </div>
 
@@ -103,7 +101,7 @@ export default function Sidebar() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-label font-bold text-xs text-on-surface truncate">
-              Maria Santos
+              {user?.name ?? "Provider"}
             </p>
             <p className="text-xs text-on-surface-variant truncate">Owner</p>
           </div>

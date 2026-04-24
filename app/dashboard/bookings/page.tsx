@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardHeader from "../components/DashboardHeader";
 import StatusBadge from "../components/StatusBadge";
-import { BOOKINGS, STAFF, type Booking, type BookingStatus } from "../lib/dashboard-data";
+import { api } from "../lib/api";
 import CalendarView from "./CalendarView";
 import BookingDetailPanel from "./BookingDetailPanel";
 import NewBookingDrawer from "./NewBookingDrawer";
+
+type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
 
 const TABS: { label: string; value: BookingStatus | "all" }[] = [
   { label: "All", value: "all" },
@@ -20,23 +22,37 @@ function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).slice(0, 2).join("");
 }
 
-function getStaffName(groomerId: string) {
-  return STAFF.find((s) => s.id === groomerId)?.name ?? "—";
-}
-
 export default function BookingsPage() {
-  const [bookings, setBookings] = useState<Booking[]>(BOOKINGS);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<BookingStatus | "all">("all");
   const [searchQ, setSearchQ] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
   const [newBookingOpen, setNewBookingOpen] = useState(false);
 
-  function handleStatusChange(id: string, status: BookingStatus) {
+  useEffect(() => {
+    api.get<{ bookings: any[] }>("/bookings").then(({ bookings: rows }) => {
+      setBookings(rows.map((b: any) => ({
+        ...b,
+        date: b.scheduledDate ?? b.date,
+        time: b.scheduledTime ?? b.time,
+        duration: b.durationMins ?? b.duration,
+        price: b.priceCentavos != null ? b.priceCentavos / 100 : (b.price ?? 0),
+        service: b.serviceName ?? b.service,
+        petBreed: b.petBreed ?? "",
+        petSpecies: b.petSpecies ?? "dog",
+        ownerPhone: b.ownerPhone ?? "",
+        groomerId: b.staffId ?? b.groomerId,
+      })));
+    }).catch(console.error);
+  }, []);
+
+  async function handleStatusChange(id: string, status: BookingStatus) {
+    await api.patch(`/bookings/${id}`, { status }).catch(console.error);
     setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)));
   }
 
-  function handleAddBooking(booking: Booking) {
+  function handleAddBooking(booking: any) {
     setBookings((prev) => [booking, ...prev]);
   }
 
@@ -169,14 +185,16 @@ export default function BookingsPage() {
                   </div>
 
                   {/* Groomer */}
-                  <div className="w-28 flex-shrink-0 hidden xl:flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-headline font-bold text-primary">{getInitials(getStaffName(booking.groomerId))}</span>
+                  {booking.staffName && (
+                    <div className="w-28 flex-shrink-0 hidden xl:flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-headline font-bold text-primary">{getInitials(booking.staffName)}</span>
+                      </div>
+                      <p className="text-xs font-label font-bold text-on-surface-variant truncate">
+                        {booking.staffName.split(" ")[0]}
+                      </p>
                     </div>
-                    <p className="text-xs font-label font-bold text-on-surface-variant truncate">
-                      {getStaffName(booking.groomerId).split(" ")[0]}
-                    </p>
-                  </div>
+                  )}
 
                   {/* Status */}
                   <div onClick={(e) => e.stopPropagation()}>

@@ -1,11 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import type { BookingStatus } from "../../lib/dashboard-data";
+import { api } from "../../lib/api";
 
-export default function BookingActions({ status }: { status: BookingStatus }) {
+export default function BookingActions({ status, bookingId, onStatusChange }: { status: string; bookingId?: string; onStatusChange?: (s: string) => void }) {
   const [confirmed, setConfirmed] = useState(false);
   const [cancelled, setCancelled] = useState(false);
+
+  async function confirmBooking() {
+    if (bookingId) await api.patch(`/bookings/${bookingId}`, { status: "confirmed" }).catch(console.error);
+    setConfirmed(true);
+    onStatusChange?.("confirmed");
+  }
+
+  async function cancelBooking() {
+    if (bookingId) await api.patch(`/bookings/${bookingId}`, { status: "cancelled" }).catch(console.error);
+    setCancelled(true);
+    onStatusChange?.("cancelled");
+  }
 
   if (status === "completed") {
     return (
@@ -61,7 +73,7 @@ export default function BookingActions({ status }: { status: BookingStatus }) {
     <div className="space-y-3">
       {status === "pending" && (
         <button
-          onClick={() => setConfirmed(true)}
+          onClick={confirmBooking}
           className="w-full bg-gradient-to-r from-primary to-primary-dim text-on-primary rounded-full py-3 font-label font-bold text-sm active:scale-95 transition-all shadow-lg shadow-primary/20"
         >
           Confirm Booking
@@ -70,7 +82,7 @@ export default function BookingActions({ status }: { status: BookingStatus }) {
 
       {status === "confirmed" && (
         <button
-          onClick={() => setConfirmed(true)}
+          onClick={confirmBooking}
           className="w-full bg-gradient-to-r from-primary to-primary-dim text-on-primary rounded-full py-3 font-label font-bold text-sm active:scale-95 transition-all shadow-lg shadow-primary/20"
         >
           Mark as Complete
@@ -78,7 +90,7 @@ export default function BookingActions({ status }: { status: BookingStatus }) {
       )}
 
       <button
-        onClick={() => setCancelled(true)}
+        onClick={cancelBooking}
         className="w-full border-2 border-error text-error rounded-full py-3 font-label font-bold text-sm active:scale-95 transition-all"
       >
         Cancel Booking

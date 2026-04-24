@@ -1,6 +1,4 @@
-import type { BookingStatus, AvailabilityStatus } from "../lib/dashboard-data";
-
-type Status = BookingStatus | AvailabilityStatus;
+type Status = string;
 
 const CONFIG: Record<Status, { label: string; className: string }> = {
   confirmed: {
@@ -34,12 +32,10 @@ const CONFIG: Record<Status, { label: string; className: string }> = {
 };
 
 export default function StatusBadge({ status }: { status: Status }) {
-  const { label, className } = CONFIG[status];
+  const cfg = CONFIG[status as keyof typeof CONFIG] ?? { label: status, className: "bg-surface-container text-on-surface-variant" };
   return (
-    <span
-      className={`inline-block px-3 py-1 rounded-full font-label font-bold text-xs ${className}`}
-    >
-      {label}
+    <span className={`inline-block px-3 py-1 rounded-full font-label font-bold text-xs ${cfg.className}`}>
+      {cfg.label}
     </span>
   );
 }

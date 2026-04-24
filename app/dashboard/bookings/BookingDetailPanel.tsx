@@ -1,16 +1,12 @@
 "use client";
 
-import { type Booking, type BookingStatus, STAFF } from "../lib/dashboard-data";
-
-function getStaffName(id: string) {
-  return STAFF.find((s) => s.id === id)?.name ?? "—";
-}
+import { api } from "../lib/api";
 
 function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).slice(0, 2).join("");
 }
 
-const STATUS_STYLES: Record<BookingStatus, string> = {
+const STATUS_STYLES: Record<string, string> = {
   pending: "bg-secondary-container text-on-secondary-container",
   confirmed: "bg-tertiary-container text-on-tertiary-container",
   completed: "bg-surface-container-highest text-on-surface-variant",
@@ -22,9 +18,9 @@ export default function BookingDetailPanel({
   onClose,
   onStatusChange,
 }: {
-  booking: Booking | null;
+  booking: any | null;
   onClose: () => void;
-  onStatusChange: (id: string, status: BookingStatus) => void;
+  onStatusChange: (id: string, status: string) => void;
 }) {
   return (
     <>
@@ -114,7 +110,7 @@ export default function BookingDetailPanel({
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-on-surface-variant">Assigned to</span>
-                    <span className="text-sm font-label font-bold text-on-surface">{getStaffName(booking.groomerId)}</span>
+                    <span className="text-sm font-label font-bold text-on-surface">{booking.staffName ?? "—"}</span>
                   </div>
                   <div className="flex items-center justify-between border-t border-outline-variant/10 pt-3">
                     <span className="text-sm font-bold text-on-surface">Total</span>

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardHeader from "../components/DashboardHeader";
 import StatusBadge from "../components/StatusBadge";
 import AddStaffModal from "../components/AddStaffModal";
-import { STAFF, StaffMember, AvailabilityStatus } from "../lib/dashboard-data";
+import { api } from "../lib/api";
+
+type AvailabilityStatus = "available" | "on_break" | "off_today";
 
 const STATUS_OPTIONS: { value: AvailabilityStatus; label: string; dot: string; chip: string }[] = [
   { value: "available", label: "Available", dot: "bg-tertiary", chip: "bg-tertiary-container text-on-tertiary-container" },
@@ -17,15 +19,28 @@ function getInitials(name: string) {
 }
 
 export default function StaffPage() {
-  const [staffList, setStaffList] = useState<StaffMember[]>(STAFF);
+  const [staffList, setStaffList] = useState<any[]>([]);
   const [searchQ, setSearchQ] = useState("");
   const [showModal, setShowModal] = useState(false);
 
-  function handleAdd(newMember: StaffMember) {
+  useEffect(() => {
+    api.get<{ staff: any[] }>("/staff").then(({ staff }) => {
+      setStaffList(staff.map((m: any) => ({
+        ...m,
+        joinedDate: m.joinedDate ?? new Date(m.joinedAt ?? "").getFullYear(),
+        specializations: m.specializations ?? [],
+        bookingsToday: m.bookingsToday ?? 0,
+        status: m.status ?? "available",
+      })));
+    }).catch(console.error);
+  }, []);
+
+  function handleAdd(newMember: any) {
     setStaffList((prev) => [...prev, newMember]);
   }
 
-  function handleStatusChange(id: string, status: AvailabilityStatus) {
+  async function handleStatusChange(id: string, status: AvailabilityStatus) {
+    await api.patch(`/staff/${id}`, { status }).catch(console.error);
     setStaffList((prev) => prev.map((m) => m.id === id ? { ...m, status } : m));
   }
 

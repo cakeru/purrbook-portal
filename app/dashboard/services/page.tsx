@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardHeader from "../components/DashboardHeader";
-import { SERVICES, type Service, type ServiceCategory } from "../lib/dashboard-data";
+import { api } from "../lib/api";
+
+type ServiceCategory = "grooming" | "vet" | "boarding";
 
 const CATEGORY_LABELS: Record<ServiceCategory, string> = {
   grooming: "Grooming",
@@ -17,11 +19,24 @@ const ICON_OPTIONS = [
 ];
 
 export default function ServicesPage() {
-  const [services, setServices] = useState<Service[]>(SERVICES);
+  const [services, setServices] = useState<any[]>([]);
   const [searchQ, setSearchQ] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ duration: "", price: "" });
+  useEffect(() => {
+    api.get<{ services: any[] }>("/services").then(({ services: rows }) => {
+      setServices(rows.map((s: any) => ({
+        ...s,
+        price: s.priceCentavos != null ? s.priceCentavos / 100 : (s.price ?? 0),
+        duration: s.durationMins ?? s.duration ?? 60,
+        active: s.active ?? true,
+        icon: s.icon ?? "spa",
+        description: s.description ?? "",
+      })));
+    }).catch(console.error);
+  }, []);
+
   const [newService, setNewService] = useState({
     name: "",
     category: "grooming" as ServiceCategory,
@@ -31,38 +46,43 @@ export default function ServicesPage() {
     description: "",
   });
 
-  function toggleActive(id: string) {
-    setServices((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s))
-    );
+  async function toggleActive(id: string) {
+    const svc = services.find((s) => s.id === id);
+    if (!svc) return;
+    await api.patch(`/services/${id}`, { active: !svc.active }).catch(console.error);
+    setServices((prev) => prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s)));
   }
 
-  function startEdit(service: Service) {
+  function startEdit(service: any) {
     setEditingId(service.id);
     setEditForm({ duration: String(service.duration), price: String(service.price) });
   }
 
-  function handleSaveEdit(id: string) {
+  async function handleSaveEdit(id: string) {
     if (!editForm.duration || !editForm.price) return;
+    await api.patch(`/services/${id}`, {
+      durationMins: Number(editForm.duration),
+      priceCentavos: Math.round(Number(editForm.price) * 100),
+    }).catch(console.error);
     setServices((prev) =>
       prev.map((s) => s.id === id ? { ...s, duration: Number(editForm.duration), price: Number(editForm.price) } : s)
     );
     setEditingId(null);
   }
 
-  function handleAdd() {
+  async function handleAdd() {
     if (!newService.name || !newService.duration || !newService.price) return;
-    const service: Service = {
-      id: `sv${Date.now()}`,
+    const body = {
       name: newService.name,
       category: newService.category,
       icon: newService.icon,
-      duration: Number(newService.duration),
-      price: Number(newService.price),
-      active: true,
+      durationMins: Number(newService.duration),
+      priceCentavos: Math.round(Number(newService.price) * 100),
       description: newService.description,
     };
-    setServices((prev) => [...prev, service]);
+    const res = await api.post<{ service: any }>("/services", body).catch(console.error);
+    const created = res?.service ?? { id: `sv${Date.now()}`, ...body, price: Number(newService.price), duration: Number(newService.duration), active: true };
+    setServices((prev) => [...prev, created]);
     setAddOpen(false);
     setNewService({ name: "", category: "grooming", icon: "spa", duration: "", price: "", description: "" });
   }

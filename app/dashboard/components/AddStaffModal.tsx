@@ -1,16 +1,14 @@
 "use client";
 
 import { useState, useEffect, type FormEvent } from "react";
-import { StaffMember, StaffRole, AvailabilityStatus } from "../lib/dashboard-data";
-
-type NewStaff = Omit<StaffMember, "id" | "bookingsToday" | "joinedDate">;
+import { api } from "../lib/api";
 
 type Props = {
-  onAdd: (staff: StaffMember) => void;
+  onAdd: (staff: any) => void;
   onClose: () => void;
 };
 
-const ROLES: StaffRole[] = ["Senior Groomer", "Groomer", "Veterinarian", "Boarding Attendant"];
+const ROLES = ["Senior Groomer", "Groomer", "Veterinarian", "Boarding Attendant"];
 const STATUSES: { value: AvailabilityStatus; label: string }[] = [
   { value: "available", label: "Available" },
   { value: "on_break", label: "On Break" },
@@ -19,9 +17,9 @@ const STATUSES: { value: AvailabilityStatus; label: string }[] = [
 
 export default function AddStaffModal({ onAdd, onClose }: Props) {
   const [name, setName] = useState("");
-  const [role, setRole] = useState<StaffRole>("Groomer");
+  const [role, setRole] = useState("Groomer");
   const [specs, setSpecs] = useState("");
-  const [status, setStatus] = useState<AvailabilityStatus>("available");
+  const [status, setStatus] = useState("available");
   const [error, setError] = useState("");
 
   // Close on Escape
@@ -33,24 +31,13 @@ export default function AddStaffModal({ onAdd, onClose }: Props) {
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) { setError("Name is required."); return; }
-    const specializations = specs
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const now = new Date();
-    const joinedDate = now.toLocaleDateString("en-US", { month: "short", year: "numeric" });
-    onAdd({
-      id: `s-${Date.now()}`,
-      name: name.trim(),
-      role,
-      specializations,
-      status,
-      bookingsToday: 0,
-      joinedDate,
-    });
+    const specializations = specs.split(",").map((s) => s.trim()).filter(Boolean);
+    const res = await api.post<{ staff: any }>("/staff", { name: name.trim(), role, specializations, status }).catch(console.error);
+    const created = res?.staff ?? { id: `s-${Date.now()}`, name: name.trim(), role, specializations, status, bookingsToday: 0, joinedDate: new Date().getFullYear().toString() };
+    onAdd(created);
     onClose();
   }
 
@@ -98,7 +85,7 @@ export default function AddStaffModal({ onAdd, onClose }: Props) {
             </label>
             <select
               value={role}
-              onChange={(e) => setRole(e.target.value as StaffRole)}
+              onChange={(e) => setRole(e.target.value)}
               className="w-full bg-surface-container rounded-xl px-4 py-2.5 text-sm font-body border border-outline-variant/20 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all appearance-none"
             >
               {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}

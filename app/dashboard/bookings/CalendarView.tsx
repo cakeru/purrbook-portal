@@ -1,6 +1,5 @@
 "use client";
 
-import { type Booking } from "../lib/dashboard-data";
 
 const SLOT_H = 56; // px per hour
 const START_HOUR = 8;

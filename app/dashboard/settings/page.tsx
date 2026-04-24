@@ -1,18 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardHeader from "../components/DashboardHeader";
-import {
-  PROVIDER_INFO,
-  OPERATING_HOURS,
-  PAYOUT_INFO,
-  PH_BANKS,
-  type DayHours,
-  type ProviderInfo,
-  type PayoutInfo,
-  type PayoutMethod,
-  type PayoutSchedule,
-} from "../lib/dashboard-data";
+import { api } from "../lib/api";
+import { PH_BANKS } from "../lib/dashboard-data";
+
+type DayHours = { day: string; open: boolean; openTime: string; closeTime: string };
+type ProviderInfo = { name: string; type: "Salon" | "Vet" | "Studio"; description: string; contact: string; address: string; amenities: string[] };
+type PayoutInfo = { method: string; mobileNumber: string; accountName: string; accountNumber: string; bankCode: string; schedule: string };
+type PayoutMethod = "gcash" | "maya" | "bank_transfer" | "cash";
+type PayoutSchedule = "weekly" | "monthly" | "on_request";
 
 const NOTIFICATIONS = [
   {
@@ -47,24 +44,65 @@ const NOTIFICATIONS = [
   },
 ];
 
+const DEFAULT_HOURS: DayHours[] = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((day) => ({
+  day, open: day !== "Sun", openTime: "09:00", closeTime: "18:00",
+}));
+
+const DEFAULT_PROFILE: ProviderInfo = { name: "", type: "Salon", description: "", contact: "", address: "", amenities: [] };
+const DEFAULT_PAYOUT: PayoutInfo = { method: "gcash", mobileNumber: "", accountName: "", accountNumber: "", bankCode: "", schedule: "weekly" };
+
 export default function SettingsPage() {
-  const [profile, setProfile] = useState<ProviderInfo>({ ...PROVIDER_INFO });
-  const [hours, setHours] = useState<DayHours[]>(
-    OPERATING_HOURS.map((h) => ({ ...h }))
-  );
+  const [profile, setProfile] = useState<ProviderInfo>(DEFAULT_PROFILE);
+  const [hours, setHours] = useState<DayHours[]>(DEFAULT_HOURS);
   const [notifications, setNotifications] = useState<Record<string, boolean>>(
     Object.fromEntries(NOTIFICATIONS.map((n) => [n.id, n.defaultOn]))
   );
   const [saved, setSaved] = useState(false);
-  const [payout, setPayout] = useState<PayoutInfo>({ ...PAYOUT_INFO });
+  const [payout, setPayout] = useState<PayoutInfo>(DEFAULT_PAYOUT);
   const [payoutSaved, setPayoutSaved] = useState(false);
 
-  function handleSave() {
+  useEffect(() => {
+    api.get<any>("/settings").then((s) => {
+      if (s.profile) setProfile({
+        name: s.profile.name ?? "",
+        type: s.profile.type ?? "Salon",
+        description: s.profile.description ?? "",
+        contact: s.profile.contact ?? "",
+        address: s.profile.address ?? "",
+        amenities: s.profile.amenities ?? [],
+      });
+      if (s.hours?.length) setHours(s.hours.map((h: any) => ({
+        day: h.day, open: h.open ?? h.isOpen ?? true, openTime: h.openTime ?? "09:00", closeTime: h.closeTime ?? "18:00",
+      })));
+      if (s.payout) setPayout({
+        method: s.payout.payoutMethod ?? "gcash",
+        mobileNumber: s.payout.mobileNumber ?? "",
+        accountName: s.payout.accountName ?? "",
+        accountNumber: s.payout.accountNumber ?? "",
+        bankCode: s.payout.bankCode ?? "",
+        schedule: s.payout.payoutSchedule ?? "weekly",
+      });
+      if (s.notifications) setNotifications(s.notifications);
+    }).catch(console.error);
+  }, []);
+
+  async function handleSave() {
+    await api.patch("/settings/profile", profile).catch(console.error);
+    await api.patch("/settings/hours", { hours }).catch(console.error);
+    await api.patch("/settings/notifications", notifications).catch(console.error);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
 
-  function handlePayoutSave() {
+  async function handlePayoutSave() {
+    await api.patch("/settings/payout", {
+      payoutMethod: payout.method,
+      mobileNumber: payout.mobileNumber,
+      accountName: payout.accountName,
+      accountNumber: payout.accountNumber,
+      bankCode: payout.bankCode,
+      payoutSchedule: payout.schedule,
+    }).catch(console.error);
     setPayoutSaved(true);
     setTimeout(() => setPayoutSaved(false), 2500);
   }
